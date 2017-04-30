@@ -1,50 +1,82 @@
-//How many warp threads
-warp_count = 30;
+// A simple loom heddle
 
-//How wide is each thread
+// Number of warp threads
+warp_count = 29;
+
+// Width of each thread (mm)
 warp_diameter = 2;
 
-//How high is the Heddle
-heddle_height = 30;
+// Total high of the heddle (mm)
+heddle_height = 80;
+
+// Edge-to-edge width of the heddle (mm)
+heddle_width = 200;
+
+// Thickness of the frame (horizontal) (mm)
+heddle_frame_width_h = 5;
+
+// Thickness of the frame (vertical) (mm)
+heddle_frame_width_v = 5;
+
+// 3D thickness (mm)
+thickness_3d = 2;
 
 //2D to make DXF files, 3D for STL
 2Dv3D = "3D"; // [2D, 3D]
 
 /* [Hidden] */
-$fn=60;
-corner_radius=2;
+$fn = 60;
+corner_radius = 4;
+hole_size = warp_diameter * 2;
 
-warp_dia = warp_diameter;
-weft_dia = warp_dia;
-shaft_width = warp_dia + weft_dia ;
-heddle_frame_width = 5*warp_dia;
-heddle_frame = heddle_frame_width * 2;
-heddle_width = shaft_width  * warp_count;
+heddle_interior = [heddle_width - heddle_frame_width_h * 2,
+                   heddle_height - heddle_frame_width_v * 2,
+                   thickness_3d];
+heddle_interior_offset = [heddle_frame_width_h, heddle_frame_width_v, 0];
+
 tt = 0.1;
 
-if (2Dv3D=="2D") {
-    projection() heddle();
-    }
-  else {
-    heddle();
-    }
+if (2Dv3D == "2D") {
+  projection() heddle();
+} else {
+  heddle();
+}
 
+/**
+ * A cube with rounded corners (in the x and y axes) of radius r.
+ */
+module cube_rounded_xy(size, r=1) {
+  translate([r, r, 0]) {
+    minkowski() {
+      cube(size - [r*2, r*2, 0]);
+      cylinder(r=r, h=0.00001);
+    }
+  }
+}
 
 module heddle() {
-    difference () {
-        minkowski() {
-        cube([heddle_height + heddle_frame, heddle_width + heddle_frame, shaft_width]);
-        cylinder(r=corner_radius, h=0.01);
+  // main heddle body
+  difference() {
+    cube_rounded_xy([heddle_width,
+                     heddle_height,
+                     thickness_3d],
+                   corner_radius);
+
+    for (i = [0 : warp_count - 1]) {
+      x = i * (heddle_interior[0] - warp_diameter)/(warp_count-1);
+      translate(heddle_interior_offset + [x, 0, -tt])
+        if (i % 2 == 0) {
+          cube_rounded_xy([warp_diameter,
+                           heddle_interior[1],
+                           thickness_3d + tt * 2],
+                          warp_diameter/2.1);
+        } else {
+          translate([0, heddle_interior[1]/2 - hole_size/2, 0])
+            cube_rounded_xy([warp_diameter,
+                             hole_size,
+                             thickness_3d + tt * 2],
+                            warp_diameter/2.1);
         }
-        translate ([heddle_frame_width , heddle_frame_width, -tt/2 ])
-            cube([heddle_height, heddle_width, shaft_width+tt ]);
-        }
-    for (I = [ heddle_frame_width + shaft_width : shaft_width *2: heddle_width+heddle_frame - shaft_width  ]) {
-        translate ([0, I, 0])
-            difference () {
-                cube ([heddle_height + heddle_frame, shaft_width, shaft_width] );
-                translate ( [(heddle_height + heddle_frame) / 2, shaft_width/2, -tt/2] )
-                    cylinder ( h=shaft_width+tt, r=warp_dia/2);
-                }
-            }
-        }
+    }
+  }
+}
