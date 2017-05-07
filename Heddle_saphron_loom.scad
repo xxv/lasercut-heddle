@@ -16,7 +16,7 @@ heddle_width = 640;
 heddle_frame_width_h = 20;
 
 // Thickness of the frame (vertical) (mm)
-heddle_frame_width_v = 5;
+heddle_frame_width_v = 20;
 
 // 3D thickness (mm)
 thickness_3d = 2;
@@ -87,7 +87,7 @@ module heddle() {
 
 module mounting_holes() {
     hole_spacing = heddle_interior[1] - hang_hole_r * 2;
-    for (y = [0 : hole_spacing/4 : hole_spacing])
-    translate([heddle_interior_offset[0]/2, heddle_interior_offset[1] + y + hang_hole_r, -tt])
+    for (n = [0 : 1])
+    translate([heddle_interior_offset[0]/2, heddle_interior_offset[1] + hole_spacing/4 + (hole_spacing/2) * n + hang_hole_r, -tt])
       cylinder(r=2, h=thickness_3d+tt*2);
 }
